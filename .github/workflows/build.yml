@@ -27,14 +27,84 @@ jobs:
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
         
-      - name: Build unsigned AAB
+      - name: Create keystore
+        run: |
+          cd android/app
+          keytool -genkeypair -v -storetype PKCS12 \
+            -keystore my-release-key.keystore \
+            -alias my-key-alias \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass password123 \
+            -keypass password123 \
+            -dname "CN=Aerofit, OU=Dev, O=Aerofit, L=Dallas, ST=TX, C=US"
+            
+      - name: Create keystore.properties
+        run: |
+          cat > android/keystore.properties << EOF
+          storePassword=password123
+          keyPassword=password123
+          keyAlias=my-key-alias
+          storeFile=my-release-key.keystore
+          EOF
+          
+      - name: Update build.gradle for signing
+        run: |
+          cat > android/app/build.gradle << 'EOF'
+          apply plugin: "com.android.application"
+          apply plugin: "org.jetbrains.kotlin.android"
+          apply plugin: "com.facebook.react"
+          
+          def keystorePropertiesFile = rootProject.file("keystore.properties")
+          def keystoreProperties = new Properties()
+          keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+          
+          react {
+          }
+          
+          android {
+              namespace "com.aerofit.app"
+              compileSdkVersion 34
+              
+              defaultConfig {
+                  applicationId "com.aerofit.app"
+                  minSdkVersion 23
+                  targetSdkVersion 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+              
+              signingConfigs {
+                  release {
+                      keyAlias keystoreProperties['keyAlias']
+                      keyPassword keystoreProperties['keyPassword']
+                      storeFile file(keystoreProperties['storeFile'])
+                      storePassword keystoreProperties['storePassword']
+                  }
+              }
+              
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled false
+                  }
+              }
+          }
+          
+          dependencies {
+              implementation("com.facebook.react:react-android")
+          }
+          EOF
+        
+      - name: Build signed AAB
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew bundleRelease --no-daemon
           
-      - name: Upload AAB
+      - name: Upload signed AAB
         uses: actions/upload-artifact@v4
         with:
-          name: app-bundle
-          path: android/app/build/outputs/bundle/release/*.aab
+          name: app-release-signed
+          path: android/app/build/outputs/bundle/release/app-release.aab
