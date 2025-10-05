@@ -27,63 +27,13 @@ jobs:
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
         
-      - name: Create release keystore
-        working-directory: android/app
-        run: |
-          keytool -genkeypair -v -storetype PKCS12 \
-            -keystore release.keystore \
-            -alias release \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass android \
-            -keypass android \
-            -dname "CN=Aerofit"
-            
-      - name: Add signing to gradle.properties
-        working-directory: android
-        run: |
-          echo "" >> gradle.properties
-          echo "MYAPP_UPLOAD_STORE_FILE=release.keystore" >> gradle.properties
-          echo "MYAPP_UPLOAD_KEY_ALIAS=release" >> gradle.properties
-          echo "MYAPP_UPLOAD_STORE_PASSWORD=android" >> gradle.properties
-          echo "MYAPP_UPLOAD_KEY_PASSWORD=android" >> gradle.properties
-          
-      - name: Add signing config to build.gradle
-        working-directory: android/app
-        run: |
-          awk '/buildTypes {/,/}/ {
-            if (/release {/) {
-              print
-              print "            signingConfig signingConfigs.release"
-              next
-            }
-          }
-          /signingConfigs {/,/}/ { next }
-          /defaultConfig {/ {
-            print
-            print "    signingConfigs {"
-            print "        release {"
-            print "            if (project.hasProperty(\"MYAPP_UPLOAD_STORE_FILE\")) {"
-            print "                storeFile file(MYAPP_UPLOAD_STORE_FILE)"
-            print "                storePassword MYAPP_UPLOAD_STORE_PASSWORD"
-            print "                keyAlias MYAPP_UPLOAD_KEY_ALIAS"
-            print "                keyPassword MYAPP_UPLOAD_KEY_PASSWORD"
-            print "            }"
-            print "        }"
-            print "    }"
-            next
-          }
-          { print }' build.gradle > build.gradle.tmp && mv build.gradle.tmp build.gradle
-        
       - name: Build AAB
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew bundleRelease --no-daemon
+          ./gradlew bundleRelease --no-daemon --stacktrace
           
-      - name: Upload AAB
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: app-release-aab
+          name: app-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
