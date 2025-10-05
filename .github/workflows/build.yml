@@ -27,15 +27,6 @@ jobs:
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
         
-      - name: Update to API 35
-        run: |
-          find android -name "build.gradle*" -type f -exec sed -i 's/compileSdkVersion\s*=\?\s*34/compileSdkVersion = 35/g' {} +
-          find android -name "build.gradle*" -type f -exec sed -i 's/targetSdkVersion\s*=\?\s*34/targetSdkVersion = 35/g' {} +
-          find android -name "build.gradle*" -type f -exec sed -i 's/compileSdk\s*=\?\s*34/compileSdk = 35/g' {} +
-          find android -name "build.gradle*" -type f -exec sed -i 's/targetSdk\s*=\?\s*34/targetSdk = 35/g' {} +
-          find android -name "build.gradle*" -type f -exec sed -i 's/compileSdkVersion\s*34/compileSdkVersion 35/g' {} +
-          find android -name "build.gradle*" -type f -exec sed -i 's/targetSdkVersion\s*34/targetSdkVersion 35/g' {} +
-        
       - name: Decode keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/aerofit-release.keystore
