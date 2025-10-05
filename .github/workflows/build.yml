@@ -27,31 +27,23 @@ jobs:
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
         
-      - name: Generate keystore
+      - name: Decode keystore
         run: |
-          keytool -genkeypair -v -storetype PKCS12 \
-            -keystore android/app/my-upload-key.keystore \
-            -alias my-key-alias \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass password \
-            -keypass password \
-            -dname "CN=Aerofit, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=US"
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/aerofit-release.keystore
             
-      - name: Configure signing in build.gradle
+      - name: Configure signing
         run: |
           cat >> android/app/build.gradle << 'GRADLE'
           
           android.buildTypes.release.signingConfig = android.signingConfigs.create("release") {
-              storeFile file('my-upload-key.keystore')
-              storePassword 'password'
-              keyAlias 'my-key-alias'
-              keyPassword 'password'
+              storeFile file('aerofit-release.keystore')
+              storePassword '${{ secrets.KEYSTORE_PASSWORD }}'
+              keyAlias '${{ secrets.KEY_ALIAS }}'
+              keyPassword '${{ secrets.KEYSTORE_PASSWORD }}'
           }
           GRADLE
         
-      - name: Build release AAB
+      - name: Build AAB
         working-directory: android
         run: |
           chmod +x gradlew
