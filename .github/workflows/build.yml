@@ -22,20 +22,19 @@ jobs:
         run: npm install --legacy-peer-deps
       
       - name: Install Expo CLI
-        run: npm install -g @expo/cli eas-cli
+        run: npm install -g @expo/cli
         
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
         
-      - name: Generate Upload Keystore
+      - name: Build unsigned AAB
+        working-directory: android
         run: |
-          cd android/app
-          keytool -genkeypair -v -storetype PKCS12 -keystore upload-keystore.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android,OU=Mobile,O=Company,L=City,ST=State,C=US"
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon
           
-      - name: Configure Signing
-        run: |
-          cat >> android/gradle.properties << EOF
-          MYAPP_UPLOAD_STORE_FILE=upload-keystore.jks
-          MYAPP_UPLOAD_KEY_ALIAS=upload
-          MYAPP_UPLOAD_STORE_PASSWORD=android
-          MY
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-bundle
+          path: android/app/build/outputs/bundle/release/*.aab
