@@ -2,11 +2,11 @@
   "expo": {
     "name": "Aerofit",
     "slug": "aerofit-app",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "android": {
       "package": "com.aerofit.app",
-      "versionCode": 3
+      "versionCode": 4
     }
   }
 }
