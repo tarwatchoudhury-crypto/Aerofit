@@ -2,11 +2,14 @@
   "expo": {
     "name": "Aerofit",
     "slug": "aerofit-app",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "android": {
       "package": "com.aerofit.app",
-      "versionCode": 4
+      "versionCode": 5,
+      "compileSdkVersion": 35,
+      "targetSdkVersion": 35,
+      "buildToolsVersion": "35.0.0"
     }
   }
 }
