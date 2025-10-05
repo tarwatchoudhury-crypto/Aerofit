@@ -27,6 +27,23 @@ jobs:
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
         
+      - name: Force update all gradle files to API 35
+        run: |
+          # Update all occurrences in all gradle files
+          find android -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -exec sed -i 's/compileSdk[[:space:]]*=[[:space:]]*34/compileSdk = 35/g' {} +
+          find android -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -exec sed -i 's/targetSdk[[:space:]]*=[[:space:]]*34/targetSdk = 35/g' {} +
+          find android -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -exec sed -i 's/compileSdkVersion[[:space:]]*34/compileSdkVersion 35/g' {} +
+          find android -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -exec sed -i 's/targetSdkVersion[[:space:]]*34/targetSdkVersion 35/g' {} +
+          find android -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -exec sed -i 's/compileSdkVersion(34)/compileSdkVersion(35)/g' {} +
+          find android -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -exec sed -i 's/targetSdkVersion(34)/targetSdkVersion(35)/g' {} +
+          
+      - name: Verify API level changes
+        run: |
+          echo "=== Checking for remaining API 34 references ==="
+          grep -r "compileSdk.*34\|targetSdk.*34" android/ || echo "No API 34 found - good!"
+          echo "=== Showing API 35 references ==="
+          grep -r "compileSdk.*35\|targetSdk.*35" android/ || echo "Warning: No API 35 found!"
+        
       - name: Decode keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/aerofit-release.keystore
