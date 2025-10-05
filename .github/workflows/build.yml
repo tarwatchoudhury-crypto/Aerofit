@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android AAB
 on:
   workflow_dispatch:
 
@@ -26,6 +26,23 @@ jobs:
         
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
+        
+      - name: Generate Release Keystore
+        run: |
+          keytool -genkey -v -keystore android/app/release.keystore -alias aerofit -keyalg RSA -keysize 2048 -validity 10000 -storepass aerofit123 -keypass aerofit123 -dname "CN=Aerofit, OU=Mobile, O=Aerofit, L=City, S=State, C=US"
+          
+      - name: Create signing config
+        run: |
+          echo "MYAPP_RELEASE_STORE_FILE=release.keystore" >> android/gradle.properties
+          echo "MYAPP_RELEASE_KEY_ALIAS=aerofit" >> android/gradle.properties
+          echo "MYAPP_RELEASE_STORE_PASSWORD=aerofit123" >> android/gradle.properties
+          echo "MYAPP_RELEASE_KEY_PASSWORD=aerofit123" >> android/gradle.properties
+          
+      - name: Update build.gradle
+        run: |
+          sed -i '/signingConfigs {/,/}/d' android/app/build.gradle
+          sed -i '/android {/a\    signingConfigs {\n        release {\n            storeFile file(MYAPP_RELEASE_STORE_FILE)\n            storePassword MYAPP_RELEASE_STORE_PASSWORD\n            keyAlias MYAPP_RELEASE_KEY_ALIAS\n            keyPassword MYAPP_RELEASE_KEY_PASSWORD\n        }\n    }' android/app/build.gradle
+          sed -i 's/signingConfig signingConfigs.debug/signingConfig signingConfigs.release/' android/app/build.gradle
         
       - name: Build AAB
         working-directory: android
